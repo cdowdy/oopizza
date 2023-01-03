@@ -1,18 +1,12 @@
+<script setup>
+import { RouterLink, RouterView } from 'vue-router'
+import HelloWorld from './components/HelloWorld.vue'
+</script>
+
 <template>
-  <ion-app>
-    <ion-router-outlet/>
-  </ion-app>
+  <RouterView />
 </template>
 
-<script>
-import { IonApp, IonRouterOutlet } from '@ionic/vue';
-import { defineComponent } from 'vue';
+<style scoped>
 
-export default defineComponent({
-  name: 'App',
-  components: {
-    IonApp,
-    IonRouterOutlet,
-  },
-});
-</script>
+</style>
