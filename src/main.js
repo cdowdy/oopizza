@@ -7,7 +7,7 @@ import router from './router'
 
 import '@formkit/themes/genesis'
 
-// import './assets/main.css'
+import './assets/main.css'
 // import '@picocss/pico/css/pico.min.css'
 
 const app = createApp(App)
