@@ -8,8 +8,15 @@ export default {
 </script>
 
 <template>
-  <section>
-    <div class="grid">
+  <div class=" pb-3 pt-4 text-center">
+    <div class="mx-auto">
+      <h1 class="text-3xl font-bold text-gray-800 dark:text-white md:text-4xl">
+        OOPizza Pizza Dough Calculator
+      </h1>
+    </div>
+  </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+
       <div>
         <FormKit type="form">
           <FormKit type="radio"
@@ -24,7 +31,7 @@ export default {
         </FormKit>
       </div>
       <div>
-        <table role="grid">
+        <table >
           <thead>
           <tr>
             <td>
@@ -45,11 +52,8 @@ export default {
       </div>
 
     </div>
-  </section>
 </template>
 
 <style>
-.formkit-options li {
-  list-style: none;
-}
+
 </style>
