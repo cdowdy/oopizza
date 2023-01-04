@@ -18,7 +18,8 @@ export default {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
 
       <div>
-        <FormKit type="form">
+        <FormKit type="form"
+        >
           <FormKit type="radio"
                    name="preferedMeasure"
                    id="preferedMeasure"
@@ -27,6 +28,7 @@ export default {
                     metric: 'Metric',
                     customary: 'US Customary',
               }"
+                   :classes="{}"
           />
         </FormKit>
       </div>
