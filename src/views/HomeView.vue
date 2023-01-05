@@ -1,9 +1,35 @@
 <script>
+import { ref, computed, reactive, defineComponent } from "vue";
+export default defineComponent( {
+  name: 'HomeView',
 
-export default {
-  components: {
+  setup() {
+    const calcModel = ref([]);
+
+    // Get the Label for entering the dough weight or thickness factor
+    // base it off of what is chosen with the defaults being:
+    // * weight measure: Metric
+    // * weight or thickness factor: thickness factor
+    // * 'calculateBy' is either thickness factor or weight - its under calcModel.value.doughBase
+    const thicknessWeightMeasure = computed( () => {
+      let measure = calcModel.value.measureType;
+      let caculateBy = calcModel.value.doughBase.calcBy;
+      let EnterDough = 'Enter Dough ' ;
+      let final = 'Thickness or Loading Factor';
+
+      if ( caculateBy === 'weight' ) {
+        let measureInitials = (measure.toLowerCase() === 'metric') ? '(grams)' : '(ounces)';
+        final = 'Weight in ' + measureInitials
+      }
+      return EnterDough + final
+    })
+
+    return {
+      calcModel,
+      thicknessWeightMeasure
+    }
   }
-}
+})
 
 </script>
 
@@ -19,21 +45,46 @@ export default {
 
       <div>
         <FormKit type="form"
+                 v-model="calcModel"
         >
           <FormKit type="radio"
-                   name="preferedMeasure"
-                   id="preferedMeasure"
+                   name="measureType"
+                   id="measureType"
                    label="Use Metric or US Customary"
+                   value="metric"
                    :options="{
                     metric: 'Metric',
                     customary: 'US Customary',
               }"
-                   :classes="{}"
           />
+          <FormKit type="group"
+                   name="doughBase"
+          >
+            <FormKit type="radio"
+                     name="calcBy"
+                     id="calcBy"
+                     label="Calculate Your Dough By"
+                     value="tf"
+                     :options="{
+                    tf: 'Thickness or Loading Factor',
+                    weight: 'Weight',
+              }"
+            />
+            <FormKit type="text"
+                     name="factor"
+                     id="factor"
+                     :label="thicknessWeightMeasure"
+                     :options="{
+                    tf: 'Thickness or Loading Factor',
+                    weight: 'Weight',
+              }"
+            />
+          </FormKit>
+
         </FormKit>
       </div>
       <div>
-        <table >
+        <table class="table-auto w-full">
           <thead>
           <tr>
             <td>
