@@ -47,6 +47,7 @@ export default defineComponent( {
         <FormKit type="form"
                  v-model="calcModel"
         >
+          <!-- Choose Metric or Customary Input -->
           <FormKit type="radio"
                    name="measureType"
                    id="measureType"
@@ -60,6 +61,7 @@ export default defineComponent( {
           <FormKit type="group"
                    name="doughBase"
           >
+            <!-- Thickness Factor Or Weight Selection -->
             <FormKit type="radio"
                      name="calcBy"
                      id="calcBy"
@@ -70,17 +72,25 @@ export default defineComponent( {
                     weight: 'Weight',
               }"
             />
+
+            <!-- Thickness Factor Or Weight Input -->
             <FormKit type="number"
                      name="factor"
                      id="factor"
                      step="0.001"
                      min="0"
                      :label="thicknessWeightMeasure"
-                     :options="{
-                    tf: 'Thickness or Loading Factor',
-                    weight: 'Weight',
-              }"
             />
+
+            <!-- Number Of Dough Balls Needed -->
+            <FormKit type="number"
+                     name="factor"
+                     id="dbNumber"
+                     step="1"
+                     min="0"
+                     label="Number Of Dough Balls Needed"
+            />
+
           </FormKit>
 
         </FormKit>
