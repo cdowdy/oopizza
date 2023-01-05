@@ -70,9 +70,11 @@ export default defineComponent( {
                     weight: 'Weight',
               }"
             />
-            <FormKit type="text"
+            <FormKit type="number"
                      name="factor"
                      id="factor"
+                     step="0.001"
+                     min="0"
                      :label="thicknessWeightMeasure"
                      :options="{
                     tf: 'Thickness or Loading Factor',
