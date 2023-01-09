@@ -1,101 +1,88 @@
-<script>
+<script setup>
 import { ref, computed, reactive, defineComponent } from "vue";
 
+const calcModel = ref([]);
+// Get the Label for entering the dough weight or thickness factor
+// base it off of what is chosen with the defaults being:
+// * weight measure: Metric
+// * weight or thickness factor: thickness factor
+// * 'calculateBy' is either thickness factor or weight - its under calcModel.value.doughBase
+const thicknessWeightMeasure = computed(() => {
+  let measure = calcModel.value.measureType;
+  let caculateBy = calcModel.value.doughBase.calcBy;
+  let EnterDough = 'Enter Dough ';
+  let final = 'Thickness or Loading Factor';
 
-export default defineComponent( {
-  name: 'HomeView',
-
-  setup() {
-    const calcModel = ref([]);
-    // Get the Label for entering the dough weight or thickness factor
-    // base it off of what is chosen with the defaults being:
-    // * weight measure: Metric
-    // * weight or thickness factor: thickness factor
-    // * 'calculateBy' is either thickness factor or weight - its under calcModel.value.doughBase
-    const thicknessWeightMeasure = computed( () => {
-      let measure = calcModel.value.measureType;
-      let caculateBy = calcModel.value.doughBase.calcBy;
-      let EnterDough = 'Enter Dough ' ;
-      let final = 'Thickness or Loading Factor';
-
-      if ( caculateBy === 'weight' ) {
-        let measureInitials = (measure.toLowerCase() === 'metric') ? '(grams)' : '(ounces)';
-        final = 'Weight in ' + measureInitials
-      }
-      return EnterDough + final
-    })
-
-    // Get a Computed Property for Pizza Size Label. Default will be round @ 14 inches
-    // If Square/Rectangle is chosen then we make the regular round label into the "Length"
-    // and then conditionally add the width input.
-    const pizzaSizeLabel = computed( () => {
-      let label = "Enter Pizza Size";
-
-      if ( calcModel.value.doughBase.pizzaShape === 'square' ) {
-        label = 'Enter Pizza Width';
-      }
-      return label;
-    })
-
-    // Take the additional ingredients, un camel case them and create a computed value
-    // that we can loop over
-
-
-
-    // list of additional ingredients
-    const additionalIngredients = [
-      {value: 'olive oil', label: 'oliveOil', percent: 0, id: 'olive-oil'},
-      {label: 'Corn Oil', value: 'cornOil', percent: 0},
-      {label: 'Canola Oil', value: 'canolaOil', percent: 0},
-      {label: 'Vegetable (Soybean) Oil', value: 'vegetableOil', percent: 0},
-      {label: 'Butter / Margarine', value: 'butterMargarine', percent: 0},
-      {label: 'Lard', value: 'lard', percent: 0},
-      {label: 'Shortening', value: 'shortening', percent: 0},
-      {label: 'Clarified Butter', value: 'clarifiedButter', percent: 0},
-
-      {label: 'Corn Syrup', value: 'cornSyrup', percent: 0},
-      {label: 'Maple Syrup (pure)', value: 'mapleSyrup', percent: 0},
-      {label: 'Molasses', value: 'molasses', percent: 0},
-      {label: 'Sugar', value: 'sugar', percent: 0},
-      {label: 'Honey', value: 'honey', percent: 0},
-
-      {label: 'Rye Flour', value: 'ryeFlour', percent: 0},
-      {label: 'Soy Flour', value: 'soyFlour', percent: 0},
-      {label: 'Corn Flour', value: 'cornFlour', percent: 0},
-      {label: 'Cornmeal', value: 'cornmeal', percent: 0},
-      {label: 'Semolina', value: 'semolina', percent: 0},
-      {label: 'Potato Flour', value: 'potatoFlour', percent: 0},
-
-      {label: 'Non-Diastatic Barley Malt Syrup', value: 'nonDiastaticBarleyMaltSyrup', percent: 0},
-      {label: 'Malted Milk Powder (Carnation\'s)', value: 'maltedMilk', percent: 0},
-      {label: 'Diastatic Malt Powder', value: 'diastaticMaltPowder', help: 'Recommended use is 0.33 - 0.66%'},
-
-      // { label: 'Custom Ingredient', value: 'custom', id: 'fakeId' },
-      {label: 'Cream of Tartar', value: 'creamTartar', help: 'Tartar should not exceed 1.0%'},
-      {label: 'Yellow Food Coloring', value: 'yellowFoodColoring', help: 'Coloring should not exceed 0.62%'},
-      {label: 'Vital Wheat Gluten', value: 'vitalWheatGluten', percent: 0},
-      {label: 'Sweet Dried Dairy Whey', value: 'sweetDriedDairyWhey', percent: 0},
-      {label: 'Dry Non-Fat Milk (Carnation\'s)', value: 'driedMilk', percent: 0},
-      {label: 'Baker\'s Non-Fat Milk', value: 'bakersDriedMilk', percent: 0},
-      {label: 'Milk (fresh)', value: 'milk', percent: 0},
-      {label: 'Buttermilk (dry)', value: 'buttermilk', help: 'Recommended use is 4.0 - 6.0%'},
-      {label: 'Eggs (large, fresh, raw)', value: 'largeEggs', percent: 0},
-      {label: 'Egg Whites', value: 'eggWhites', percent: 0},
-      {label: 'Baking Soda', value: 'bakingSoda', percent: 0},
-      {label: 'Baking Powder', value: 'bakingPowder', percent: 0},
-      {label: 'Vinegar', value: 'vinegar', percent: 0},
-      {label: 'WRISE', value: 'wrise', help: 'Recommended use is 0.35 - 1.5%'},
-      {label: 'PZ-24', value: 'pz24', help: 'Recommended use is 1.0 - 2.0%'}
-    ]
-
-    return {
-      calcModel,
-      thicknessWeightMeasure,
-      pizzaSizeLabel,
-      additionalIngredients,
-    }
+  if (caculateBy === 'weight') {
+    let measureInitials = (measure.toLowerCase() === 'metric') ? '(grams)' : '(ounces)';
+    final = 'Weight in ' + measureInitials
   }
+  return EnterDough + final
 })
+
+// Get a Computed Property for Pizza Size Label. Default will be round @ 14 inches
+// If Square/Rectangle is chosen then we make the regular round label into the "Length"
+// and then conditionally add the width input.
+const pizzaSizeLabel = computed(() => {
+  let label = "Enter Pizza Size";
+
+  if (calcModel.value.doughBase.pizzaShape === 'square') {
+    label = 'Enter Pizza Width';
+  }
+  return label;
+});
+
+const addIngredients = () => {
+
+};
+
+
+// list of additional ingredients
+const additionalIngredients = ref([
+  {label: 'Olive oil', value: 'oliveOil', percent: 0, id: 'olive-oil'},
+  {label: 'Corn Oil', value: 'cornOil', percent: 0},
+  {label: 'Canola Oil', value: 'canolaOil', percent: 0},
+  {label: 'Vegetable (Soybean) Oil', value: 'vegetableOil', percent: 0},
+  {label: 'Butter / Margarine', value: 'butterMargarine', percent: 0},
+  {label: 'Lard', value: 'lard', percent: 0},
+  {label: 'Shortening', value: 'shortening', percent: 0},
+  {label: 'Clarified Butter', value: 'clarifiedButter', percent: 0},
+
+  {label: 'Corn Syrup', value: 'cornSyrup', percent: 0},
+  {label: 'Maple Syrup (pure)', value: 'mapleSyrup', percent: 0},
+  {label: 'Molasses', value: 'molasses', percent: 0},
+  {label: 'Sugar', value: 'sugar', percent: 0},
+  {label: 'Honey', value: 'honey', percent: 0},
+
+  {label: 'Rye Flour', value: 'ryeFlour', percent: 0},
+  {label: 'Soy Flour', value: 'soyFlour', percent: 0},
+  {label: 'Corn Flour', value: 'cornFlour', percent: 0},
+  {label: 'Cornmeal', value: 'cornmeal', percent: 0},
+  {label: 'Semolina', value: 'semolina', percent: 0},
+  {label: 'Potato Flour', value: 'potatoFlour', percent: 0},
+
+  {label: 'Non-Diastatic Barley Malt Syrup', value: 'nonDiastaticBarleyMaltSyrup', percent: 0},
+  {label: 'Malted Milk Powder (Carnation\'s)', value: 'maltedMilk', percent: 0},
+  {label: 'Diastatic Malt Powder', value: 'diastaticMaltPowder', help: 'Recommended use is 0.33 - 0.66%'},
+
+  // { label: 'Custom Ingredient', value: 'custom', id: 'fakeId' },
+  {label: 'Cream of Tartar', value: 'creamTartar', help: 'Tartar should not exceed 1.0%'},
+  {label: 'Yellow Food Coloring', value: 'yellowFoodColoring', help: 'Coloring should not exceed 0.62%'},
+  {label: 'Vital Wheat Gluten', value: 'vitalWheatGluten', percent: 0},
+  {label: 'Sweet Dried Dairy Whey', value: 'sweetDriedDairyWhey', percent: 0},
+  {label: 'Dry Non-Fat Milk (Carnation\'s)', value: 'driedMilk', percent: 0},
+  {label: 'Baker\'s Non-Fat Milk', value: 'bakersDriedMilk', percent: 0},
+  {label: 'Milk (fresh)', value: 'milk', percent: 0},
+  {label: 'Buttermilk (dry)', value: 'buttermilk', help: 'Recommended use is 4.0 - 6.0%'},
+  {label: 'Eggs (large, fresh, raw)', value: 'largeEggs', percent: 0},
+  {label: 'Egg Whites', value: 'eggWhites', percent: 0},
+  {label: 'Baking Soda', value: 'bakingSoda', percent: 0},
+  {label: 'Baking Powder', value: 'bakingPowder', percent: 0},
+  {label: 'Vinegar', value: 'vinegar', percent: 0},
+  {label: 'WRISE', value: 'wrise', help: 'Recommended use is 0.35 - 1.5%'},
+  {label: 'PZ-24', value: 'pz24', help: 'Recommended use is 1.0 - 2.0%'}
+])
+
 
 </script>
 
@@ -340,22 +327,10 @@ export default defineComponent( {
                 placeholder="Select ingredient"
                 :options="additionalIngredients"
             />
-            <template v-for="ingredient in calcModel.doughIngredients.additionalIngredients"
-                      :key="ingredient">
-              {{ ingredient }}
-<!--              <FormKit type="number"-->
-<!--                       name="hydrationPercent"-->
-<!--                       id="hydrationPercent"-->
-<!--                       value="63"-->
-<!--                       step="1"-->
-<!--                       min="0"-->
-<!--                       validation="required"-->
-<!--                       label="Dough Hydration Percent"-->
-<!--                       help="How much water or liquid used in the dough recipe divided by the total amount of flour used in the recipe"-->
-<!--              />-->
-
-            </template>
-
+            <FormKit type="button"
+                     label="Add Custom Ingredient(s)"
+                     @click="addIngredients()"
+            />
           </FormKit>
         </FormKit>
       </div>
