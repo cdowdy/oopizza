@@ -32,8 +32,9 @@ const pizzaSizeLabel = computed(() => {
   return label;
 });
 
-const addIngredients = () => {
-
+const showAdditionalIngredientInput = ref(false);
+const handleAddIngredients = () => {
+  showAdditionalIngredientInput.value = true
 };
 
 
@@ -329,8 +330,42 @@ const additionalIngredients = ref([
             />
             <FormKit type="button"
                      label="Add Custom Ingredient(s)"
-                     @click="addIngredients()"
+                     @click="handleAddIngredients()"
+                     v-if="!showAdditionalIngredientInput"
             />
+            <template v-if="showAdditionalIngredientInput">
+              <div class="flex">
+                <FormKit type="button"
+                         label="Done Adding Ingredients"
+                         @click="showAdditionalIngredientInput = false"
+                />
+                <FormKit type="button"
+                         label="Add Another Custom Ingredient"
+                         @click="handleAddIngredients()"
+                />
+<!--                <div class="space-x-4 py-4">-->
+<!--                  <button class="inline-block rounded-md bg-red-500 px-10 py-2 font-semibold text-red-100 shadow-md duration-75 hover:bg-red-400">-->
+<!--                    Done-->
+<!--                  </button>-->
+<!--                  <button class="inline-block rounded-md bg-green-500 px-6 py-2 font-semibold text-green-100 shadow-md duration-75 hover:bg-green-400">-->
+<!--                    Add Another-->
+<!--                  </button>-->
+<!--                </div>-->
+              </div>
+              <div class="flex">
+                <FormKit type="text"
+                         label="Name of Your Ingredient"
+                         name="customIngredientName"
+                         validation="required"
+                />
+                <FormKit type="number"
+                         label="Percentage of Your Ingredient"
+                         name="customIngredientPercent"
+                         validation="required"
+                />
+
+              </div>
+            </template>
           </FormKit>
         </FormKit>
       </div>
