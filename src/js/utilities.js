@@ -91,10 +91,7 @@ export function ingredientTotals({
 
 
     ingObj['Totals'] = totals;
-    ingObj['Totals']['total'] = percentsTotal(ingObj['Totals'])
-    // let totalValues =
-    console.log( ingObj['Totals']['total'] )
-
+    ingObj['Totals']['totalPercent'] = percentsTotal(ingObj['Totals'])
 
     return ingObj
 }

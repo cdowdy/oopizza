@@ -449,15 +449,38 @@ const additionalIngredients = ref([
                 {{ ingredient.ounces }}
               </td>
             </tr>
+              <tr>
+                  <td>
+                      <hr>
+                  </td>
+              </tr>
+
           </template>
-          <template v-for=" (key, v ) in tableIngredients.totals" :key="key.Totals">
+          <template v-for=" (key, v ) in tableIngredients.totals" :key="key.totals">
             <tr >
               <td>
-                Totals: {{ key.total }}%
+                Totals: {{ key.totalPercent }}%
               </td>
             </tr>
           </template>
-
+          <tr>
+              <td><p>
+                  tableingredients.ingredients
+              </p>
+                      <pre>
+                          {{ tableIngredients.ingredients }}
+                      </pre>
+              </td>
+          </tr>
+          <tr>
+              <td><p>
+                  tableingredients.totals
+              </p>
+                  <pre>
+                          {{ tableIngredients.totals }}
+                      </pre>
+              </td>
+          </tr>
           </tbody>
         </table>
       </div>
