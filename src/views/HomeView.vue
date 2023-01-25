@@ -3,7 +3,7 @@ import { ref, computed, reactive, defineComponent } from "vue";
 // import { createInput } from "@formkit/vue";
 // import Repeater from "@/components/Repeater.vue";
 import _startCase from 'lodash/startCase';
-import {  ingredientTotals } from "@/js/utilities";
+import {  ingredientTotals, calculateDoughWeight, calculateGrams } from "@/js/utilities";
 
 const calcModel = ref([]);
 // const rptr = createInput(Repeater);
@@ -32,6 +32,29 @@ const thicknessWeightMeasure = computed(() => {
   }
   return EnterDough + final
 })
+
+// const thicknessWeightValue = computed ( () => {
+//     let measure = calcModel.value.measureType;
+//     let caculateBy = calcModel.value.doughBase.calcBy;
+//     let value = 0.0973;
+//
+//     console.log( 'value', value )
+//     console.log( 'measure', measure )
+//     console.log('calculate by', caculateBy )
+//
+//     if ( caculateBy === 'weight' && measure === 'customary' ) {
+//         value = 13
+//         return value
+//     } else if(caculateBy === 'weight') {
+//         value = calculateGrams(13);
+//         console.log('value -weight:', value)
+//         return  value
+//     }
+//
+//
+//
+//     return value;
+// })
 
 // Get a Computed Property for Pizza Size Label. Default will be round @ 14 inches
 // If Square/Rectangle is chosen then we make the regular round label into the "Length"
@@ -71,6 +94,13 @@ const yeastTypeName = (type) => {
   }
 }
 
+const tfForTable = computed( () => {
+
+    let model = calcModel.value.doughBase || 0
+
+    return model.factor;
+})
+
 // computed value of dough ingredients
 const tableIngredients = computed( () => {
   // I want the object to look like as follows:
@@ -101,6 +131,13 @@ const tableIngredients = computed( () => {
 
   let ing = Object.fromEntries( Object.entries(ingredientObject).filter(([key]) => !key.includes('Totals')) )
   let total =  Object.fromEntries( Object.entries(ingredientObject).filter(([key]) => key.includes('Totals')) )
+  let totalIngredientPercent = total.Totals.totalPercent
+
+    calculateDoughWeight({
+        measureType: calcModel.value.measureType,
+        ingredientTotals: totalIngredientPercent,
+        doughBase: calcModel.value.doughBase
+    })
 
   return {
     ingredients: ing,
@@ -239,7 +276,6 @@ const additionalIngredients = ref([
             <FormKit type="number"
                      name="pizzaWidth"
                      id="pizzaWidth"
-                     step=".001"
                      min="0"
                      value="14"
                      validation="required"
@@ -252,7 +288,6 @@ const additionalIngredients = ref([
                      name="pizzaLength"
                      id="pizzaLength"
                      value="16"
-                     step=".01"
                      min="0"
                      validation="required"
                      label="Pizza Length"
@@ -459,28 +494,12 @@ const additionalIngredients = ref([
           <template v-for=" (key, v ) in tableIngredients.totals" :key="key.totals">
             <tr >
               <td>
-                Totals: {{ key.totalPercent }}%
+                Totals: {{ key.totalPercent }}%, TF: {{ tfForTable }}
+
               </td>
             </tr>
           </template>
-          <tr>
-              <td><p>
-                  tableingredients.ingredients
-              </p>
-                      <pre>
-                          {{ tableIngredients.ingredients }}
-                      </pre>
-              </td>
-          </tr>
-          <tr>
-              <td><p>
-                  tableingredients.totals
-              </p>
-                  <pre>
-                          {{ tableIngredients.totals }}
-                      </pre>
-              </td>
-          </tr>
+
           </tbody>
         </table>
       </div>

@@ -29,6 +29,12 @@ export function circleThicknessFactor({panSize = 0, factor = 0}) {
     return pi * panRadius * panRadius * factor
 }
 
+export function squareThicknessFactor({ panWidth = 0, panLength = 0, factor = 0}) {
+    let sq = panWidth * panLength
+
+    return sq
+}
+
 /**
  *
  * @param ingredient
@@ -143,4 +149,41 @@ export function percentsTotal(objectValues) {
     const reducer = (accumulator, currentValue) => accumulator + currentValue;
 
     return Object.values(objectValues).reduce(reducer, initialValue);
+}
+
+export function pizzaShape( shape, width, length ) {
+
+}
+
+
+export function calculateDoughWeight({
+                                         measureType = '',
+                                         ingredientTotals = 0,
+                                         doughBase = {}
+                                     }) {
+    const measure = measureType;
+    const calculateBy = doughBase.calcBy
+    const dbNumber = doughBase.dbNumber
+    const shape = doughBase.pizzaShape
+    const pizzaWidth = doughBase.pizzaWidth
+
+    let factor = doughBase.factor;
+    let flourByWeight = getFlourByWeight({desiredDoughWeight: factor, ingredientPercents: ingredientTotals})
+
+
+    if ( calculateBy === 'tf' && shape === 'round' ) {
+    }
+
+}
+
+export function getFlourByWeight( { desiredDoughWeight = 0, ingredientPercents = 0 } = {}) {
+
+    return desiredDoughWeight / ingredientPercents * 100 ;
+}
+
+export function pizzaShapeBase( shape = 'round' ) {
+
+
+    return
+
 }
