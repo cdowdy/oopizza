@@ -1,7 +1,20 @@
 <script setup>
 import { ref, computed, reactive, defineComponent } from "vue";
+// import { createInput } from "@formkit/vue";
+// import Repeater from "@/components/Repeater.vue";
+import _startCase from 'lodash/startCase';
+import {  ingredientTotals } from "@/js/utilities";
 
 const calcModel = ref([]);
+// const rptr = createInput(Repeater);
+
+
+
+const addedIngredientsName = computed( (name) => {
+  return _startCase(name)
+})
+
+
 // Get the Label for entering the dough weight or thickness factor
 // base it off of what is chosen with the defaults being:
 // * weight measure: Metric
@@ -36,6 +49,65 @@ const showAdditionalIngredientInput = ref(false);
 const handleAddIngredients = () => {
   showAdditionalIngredientInput.value = true
 };
+
+// TODO: move these to a utility out of this and into its own file
+const saltTypeName = (type) => {
+  if (type === 'mk' ) {
+    return 'Morton Kosher Salt'
+  } else if (type === 'ss' ) {
+    return 'Sea Salt'
+  } else {
+    return 'Diamond Crystal Kosher Salt'
+  }
+}
+
+const yeastTypeName = (type) => {
+  if (type === 'idy' ) {
+    return 'Instant Dry Yeast'
+  } else if (type === 'ady' ) {
+    return 'Active Dry Yeast'
+  } else {
+    return 'Cake/Fresh/Bakers Yeast'
+  }
+}
+
+// computed value of dough ingredients
+const tableIngredients = computed( () => {
+  // I want the object to look like as follows:
+  // let exampleObject = [
+  //   {
+  //     'Name': Ingrdient Name,
+  //     'Percent': Ingredient Percent,
+  //     'Total': ingredient total,
+  //   },
+  // ];
+  const doughIngredients = calcModel.value.doughIngredients || []
+  let saltType = doughIngredients.saltType
+  let saltName = saltTypeName(saltType)
+
+  let yeastType = yeastTypeName(doughIngredients.yeastType)
+
+
+  let checkedIngredients = doughIngredients.checkedIngredients
+
+  const ingredientObject = ingredientTotals({
+    waterPercent: doughIngredients.hydrationPercent,
+    saltType: saltName,
+    saltPercent: doughIngredients.saltPercent,
+    yeastType: yeastType,
+    yeastPercent: doughIngredients.yeastPercent,
+    additionalIngredients: checkedIngredients
+  })
+
+  let ing = Object.fromEntries( Object.entries(ingredientObject).filter(([key]) => !key.includes('Totals')) )
+  let total =  Object.fromEntries( Object.entries(ingredientObject).filter(([key]) => key.includes('Totals')) )
+
+  return {
+    ingredients: ing,
+    totals: total
+  }
+})
+
 
 
 // list of additional ingredients
@@ -324,47 +396,24 @@ const additionalIngredients = ref([
             <FormKit
                 type="checkbox"
                 label="Additional Ingredients"
-                name="additionalIngredients"
+                name="optionalIngredients"
                 placeholder="Select ingredient"
                 :options="additionalIngredients"
             />
-            <FormKit type="button"
-                     label="Add Custom Ingredient(s)"
-                     @click="handleAddIngredients()"
-                     v-if="!showAdditionalIngredientInput"
-            />
-            <template v-if="showAdditionalIngredientInput">
-              <div class="flex">
-                <FormKit type="button"
-                         label="Done Adding Ingredients"
-                         @click="showAdditionalIngredientInput = false"
-                />
-                <FormKit type="button"
-                         label="Add Another Custom Ingredient"
-                         @click="handleAddIngredients()"
-                />
-<!--                <div class="space-x-4 py-4">-->
-<!--                  <button class="inline-block rounded-md bg-red-500 px-10 py-2 font-semibold text-red-100 shadow-md duration-75 hover:bg-red-400">-->
-<!--                    Done-->
-<!--                  </button>-->
-<!--                  <button class="inline-block rounded-md bg-green-500 px-6 py-2 font-semibold text-green-100 shadow-md duration-75 hover:bg-green-400">-->
-<!--                    Add Another-->
-<!--                  </button>-->
-<!--                </div>-->
-              </div>
-              <div class="flex">
-                <FormKit type="text"
-                         label="Name of Your Ingredient"
-                         name="customIngredientName"
-                         validation="required"
-                />
-                <FormKit type="number"
-                         label="Percentage of Your Ingredient"
-                         name="customIngredientPercent"
-                         validation="required"
-                />
 
-              </div>
+            <template v-for="ingredient in calcModel.doughIngredients.optionalIngredients ">
+             <FormKit type="group" name="checkedIngredients">
+               <FormKit type="number"
+                        :name="ingredient"
+                        id="ingredient"
+                        value="0"
+                        step=".01"
+                        min="0"
+                        validation="required"
+                        :label="_startCase(ingredient) +  ' Percent' "
+               />
+             </FormKit>
+
             </template>
           </FormKit>
         </FormKit>
@@ -373,23 +422,43 @@ const additionalIngredients = ref([
 
 
       <div>
-        <table class="table-auto w-full">
-          <thead>
+        <table class="table-auto w-full border-collapse">
+          <thead class="text-left">
           <tr>
-            <td>
+            <th >
               Ingredients
-            </td>
-            <td>
+            </th>
+            <th>
               Grams
-            </td>
-            <td>
+            </th>
+            <th>
               Ounces
-            </td>
+            </th>
           </tr>
           </thead>
-          <tr>
-            <td>placeholder</td>
-          </tr>
+          <tbody>
+          <template v-for="(ingredient, totals ) in tableIngredients.ingredients" :key="ingredient.name">
+            <tr>
+              <td>
+             {{ ingredient.name }}: ({{ ingredient.percent }}%)
+              </td>
+              <td>
+                {{ingredient.grams }}
+              </td>
+              <td>
+                {{ ingredient.ounces }}
+              </td>
+            </tr>
+          </template>
+          <template v-for=" (key, v ) in tableIngredients.totals" :key="key.Totals">
+            <tr >
+              <td>
+                Totals: {{ key.total }}%
+              </td>
+            </tr>
+          </template>
+
+          </tbody>
         </table>
       </div>
 
