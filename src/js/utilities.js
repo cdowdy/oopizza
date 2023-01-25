@@ -1,5 +1,6 @@
 import _toNumber from "lodash/toNumber"
 import _startCase from "lodash/startCase";
+
 /**
  * this is also called "dough loading" pizzamaking.com moved this to "thickness factor"
  * https://www.pizzatoday.com/departments/in-the-kitchen/2012-april-dough-doctor/
@@ -21,17 +22,30 @@ import _startCase from "lodash/startCase";
  *  dwA = tf_size * Number(1 + br / 100) * (3.141592653589793 * (Number(p_size) / 2) * (Number(p_size) / 2)
  *  + 3.141592653589793 * Number(p_size) * (Number(pan_height) - 0.25));
  */
-export function circleThicknessFactor({ panSize = 0, factor = 0}) {
+export function circleThicknessFactor({panSize = 0, factor = 0}) {
     const pi = 3.141592653589793;
     let panRadius = panSize / 2;
 
     return pi * panRadius * panRadius * factor
 }
 
+/**
+ *
+ * @param ingredient
+ * @returns {number}
+ */
 export function calculateGrams(ingredient) {
-    return 28.35 * parseFloat( ingredient );
+    return 28.35 * parseFloat(ingredient);
 }
 
+/**
+ *
+ * @param ingredientName
+ * @param ingredientPercent
+ * @param weightGrams
+ * @param weightOunces
+ * @constructor
+ */
 export function Ingredient({ingredientName = '', ingredientPercent = 0, weightGrams = 0, weightOunces = 0} = {}) {
     this.name = ingredientName;
     this.percent = ingredientPercent;
@@ -40,6 +54,28 @@ export function Ingredient({ingredientName = '', ingredientPercent = 0, weightGr
 
 }
 
+// export function Totals( { percentTotal = 0,
+//                             numberOfDoughBalls = 1,
+//                             singleBall = 0,
+//                             doughTF = 0.0
+//                         } = {} ) {
+//     this.totalPercent = percentTotal;
+//     this.dbNumber = numberOfDoughBalls;
+//     this.single = singleBall;
+//     this.tf = doughTF;
+
+// }
+
+/**
+ *
+ * @param waterPercent
+ * @param saltType
+ * @param saltPercent
+ * @param yeastType
+ * @param yeastPercent
+ * @param additionalIngredients
+ * @returns {{salt: Ingredient, flour: Ingredient, water: Ingredient, yeast: Ingredient}}
+ */
 export function ingredientTotals({
                                      waterPercent = 0,
                                      saltType = '',
@@ -65,29 +101,30 @@ export function ingredientTotals({
             yeast
         }
 
+    // make and combine an object with all the ingredients from the form
+    // and place it in the ingredient object created above
     Object.entries(additionalIngredients).forEach(([key, value]) => {
         let ingredient = {};
-        let ingName = _startCase( key );
-        let ingPercent = _toNumber( value );
+        let ingName = _startCase(key);
+        let ingPercent = _toNumber(value);
 
 
         ingredient[ingName] = new Ingredient({
             ingredientName: ingName,
             ingredientPercent: ingPercent
-        } )
+        })
 
-        Object.assign( ingObj, ingredient)
+        Object.assign(ingObj, ingredient)
 
     });
 
 
-    Object.entries(ingObj).forEach( ( [key, value ] ) => {
+    Object.entries(ingObj).forEach(([key, value]) => {
         let percentObj = {}
 
         percentObj[key] = value.percent
-        Object.assign( totals, percentObj)
+        Object.assign(totals, percentObj)
     })
-
 
 
     ingObj['Totals'] = totals;
@@ -96,8 +133,12 @@ export function ingredientTotals({
     return ingObj
 }
 
-
-export function percentsTotal( objectValues ) {
+/**
+ *
+ * @param objectValues
+ * @returns {unknown}
+ */
+export function percentsTotal(objectValues) {
     let initialValue = 0
     const reducer = (accumulator, currentValue) => accumulator + currentValue;
 
