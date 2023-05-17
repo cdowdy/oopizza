@@ -3,12 +3,27 @@ import { ref, computed, reactive, defineComponent } from "vue";
 // import { createInput } from "@formkit/vue";
 // import Repeater from "@/components/Repeater.vue";
 import _startCase from 'lodash/startCase';
-import {  ingredientTotals, calculateDoughWeight, calculateGrams } from "@/js/utilities";
+// import { useDoughStore } from "@/stores/DoughSettings";
+// import {storeToRefs} from "pinia";
+// const doughStore = useDoughStore();
+import {
+  percentsTotal,
+  ingredientPercentTotals,
+  calculateDoughWeight,
+  filterObject,
+    filterObjectExclude
+} from "@/js/utilities";
 
 const calcModel = ref([]);
 // const rptr = createInput(Repeater);
 
 
+// const {
+//     calcBy, dbNumber, factor, shape, pizzaWidth, hydrationPercent, saltPercent, saltType,
+//     yeastPercent,
+//     yeastType,
+//     measureType
+// } = storeToRefs(doughStore)
 
 const addedIngredientsName = computed( (name) => {
   return _startCase(name)
@@ -33,34 +48,16 @@ const thicknessWeightMeasure = computed(() => {
   return EnterDough + final
 })
 
-// const thicknessWeightValue = computed ( () => {
-//     let measure = calcModel.value.measureType;
-//     let caculateBy = calcModel.value.doughBase.calcBy;
-//     let value = 0.0973;
-//
-//     console.log( 'value', value )
-//     console.log( 'measure', measure )
-//     console.log('calculate by', caculateBy )
-//
-//     if ( caculateBy === 'weight' && measure === 'customary' ) {
-//         value = 13
-//         return value
-//     } else if(caculateBy === 'weight') {
-//         value = calculateGrams(13);
-//         console.log('value -weight:', value)
-//         return  value
-//     }
-//
-//
-//
-//     return value;
-// })
 
 // Get a Computed Property for Pizza Size Label. Default will be round @ 14 inches
 // If Square/Rectangle is chosen then we make the regular round label into the "Length"
 // and then conditionally add the width input.
 const pizzaSizeLabel = computed(() => {
   let label = "Enter Pizza Size";
+
+  if ( calcModel.value.measureType === 'metric') {
+   label = 'Enter Pizza Size (in cm)'
+  }
 
   if (calcModel.value.doughBase.pizzaShape === 'square') {
     label = 'Enter Pizza Width';
@@ -100,51 +97,6 @@ const tfForTable = computed( () => {
 
     return model.factor;
 })
-
-// computed value of dough ingredients
-const tableIngredients = computed( () => {
-  // I want the object to look like as follows:
-  // let exampleObject = [
-  //   {
-  //     'Name': Ingrdient Name,
-  //     'Percent': Ingredient Percent,
-  //     'Total': ingredient total,
-  //   },
-  // ];
-  const doughIngredients = calcModel.value.doughIngredients || []
-  let saltType = doughIngredients.saltType
-  let saltName = saltTypeName(saltType)
-
-  let yeastType = yeastTypeName(doughIngredients.yeastType)
-
-
-  let checkedIngredients = doughIngredients.checkedIngredients
-
-  const ingredientObject = ingredientTotals({
-    waterPercent: doughIngredients.hydrationPercent,
-    saltType: saltName,
-    saltPercent: doughIngredients.saltPercent,
-    yeastType: yeastType,
-    yeastPercent: doughIngredients.yeastPercent,
-    additionalIngredients: checkedIngredients
-  })
-
-  let ing = Object.fromEntries( Object.entries(ingredientObject).filter(([key]) => !key.includes('Totals')) )
-  let total =  Object.fromEntries( Object.entries(ingredientObject).filter(([key]) => key.includes('Totals')) )
-  let totalIngredientPercent = total.Totals.totalPercent
-
-    calculateDoughWeight({
-        measureType: calcModel.value.measureType,
-        ingredientTotals: totalIngredientPercent,
-        doughBase: calcModel.value.doughBase
-    })
-
-  return {
-    ingredients: ing,
-    totals: total
-  }
-})
-
 
 
 // list of additional ingredients
@@ -193,6 +145,68 @@ const additionalIngredients = ref([
   {label: 'PZ-24', value: 'pz24', help: 'Recommended use is 1.0 - 2.0%'}
 ])
 
+/**
+ * Starting from scratch.
+ * 1) get the flour weight in grams since metric will be the default OUTPUT not input. pizza sizes will default to US customary.
+ * 2) convert that weight from #1 to US customary aka ounces.
+ * After that move to water, yeast, salt weights and convert those to us customary.
+ * then we can move to additional ingredients.
+ */
+
+const tableData = computed( () => {
+  const doughIngredients = calcModel.value.doughIngredients || [];
+  const doughbase = calcModel.value.doughBase || [];
+  let factor = doughbase.calcBy || 'tf' ;
+  let saltType = doughIngredients.saltType
+  let saltName = saltTypeName(saltType);
+  let measureType =  calcModel.value.measureType || 'customary'
+  let yeastType = yeastTypeName(doughIngredients.yeastType)
+  let checkedIngredients = doughIngredients.checkedIngredients
+
+  const ingTotalObj = ingredientPercentTotals({
+    waterPercent: doughIngredients.hydrationPercent,
+    saltType: saltName,
+    saltPercent: doughIngredients.saltPercent,
+    yeastType: yeastType,
+    yeastPercent: doughIngredients.yeastPercent,
+    additionalIngredients: checkedIngredients
+  });
+  let ingredientObject = filterObjectExclude( ingTotalObj, 'Totals')
+  let percentTotals = filterObject(ingTotalObj, 'Totals')
+  console.log('percentTotals', percentTotals)
+
+  const doughWeight = calculateDoughWeight({
+    measure: measureType,
+    doughBase: doughbase,
+    ingredients: ingredientObject,
+    totalIngredientsPercent: percentTotals.Totals.totalPercent
+  });
+
+  let tempGramWeights = {};
+  let tempOzWeights = {};
+  Object.entries(doughWeight).forEach(([key, value]) => {
+    let gramObj = {}
+    let ozObj = {}
+
+
+    gramObj[key] = value.grams
+    ozObj[key] = value.ounces
+
+    Object.assign(tempGramWeights, gramObj)
+    Object.assign( tempOzWeights, ozObj)
+  })
+
+
+  ingTotalObj.Totals['totalGrams'] = percentsTotal(tempGramWeights)
+  ingTotalObj.Totals['totalOunces'] = percentsTotal(tempOzWeights)
+  console.log('ingTotalObj', ingTotalObj )
+  return {
+    measure: measureType,
+    ingredients: filterObjectExclude(ingTotalObj, 'Totals'),
+    totals: filterObject(ingTotalObj, 'Totals')
+
+  }
+})
 
 </script>
 
@@ -215,7 +229,7 @@ const additionalIngredients = ref([
                    name="measureType"
                    id="measureType"
                    label="Use Metric or US Customary"
-                   value="metric"
+                   value="customary"
                    :options="{
                     metric: 'Metric',
                     customary: 'US Customary',
@@ -457,49 +471,42 @@ const additionalIngredients = ref([
 
 
       <div>
-        <table class="table-auto w-full border-collapse">
-          <thead class="text-left">
+        <table class="table-auto w-full border">
+          <thead class="font-semibold uppercase text-gray-400 bg-gray-50">
           <tr>
-            <th >
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-s font-semibold text-gray-600 uppercase tracking-wider" >
               Ingredients
             </th>
-            <th>
+            <th  class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-s font-semibold text-gray-600 uppercase tracking-wider text-right">
               Grams
             </th>
-            <th>
+            <th  class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-s font-semibold text-gray-600 uppercase tracking-wider text-right" >
               Ounces
             </th>
           </tr>
           </thead>
           <tbody>
-          <template v-for="(ingredient, totals ) in tableIngredients.ingredients" :key="ingredient.name">
+          <template v-for="(ingredient, totals ) in tableData.ingredients" :key="ingredient.name">
             <tr>
-              <td>
+              <td class="px-5 py-5 border-b border-gray-200 bg-white text-md">
              {{ ingredient.name }}: ({{ ingredient.percent }}%)
               </td>
-              <td>
+              <td class="px-5 py-5 border-b border-gray-200 bg-white text-md text-right">
                 {{ingredient.grams }}
               </td>
-              <td>
+              <td class="px-5 py-5 border-b border-gray-200 bg-white text-md text-right">
                 {{ ingredient.ounces }}
               </td>
             </tr>
-              <tr>
-                  <td>
-                      <hr>
-                  </td>
-              </tr>
-
           </template>
-          <template v-for=" (key, v ) in tableIngredients.totals" :key="key.totals">
-            <tr >
-              <td>
-                Totals: {{ key.totalPercent }}%, TF: {{ tfForTable }}
+          <tr class="uppercase text-gray-400 bg-gray-50">
 
-              </td>
-            </tr>
-          </template>
-
+            <td class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              Totals: {{ tableData.totals.Totals.totalPercent }}%, TF: {{ tfForTable }}
+            </td>
+            <td></td>
+            <td></td>
+          </tr>
           </tbody>
         </table>
       </div>
