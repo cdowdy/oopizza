@@ -82,22 +82,8 @@ export function filterObject( inputObject, keyWordInclude ) {
     return Object.fromEntries(Object.entries(inputObject).filter(([key]) => key.includes(keyWordInclude)))
 }
 
-
-
-/**
- *
- * @param ingredient
- * @returns {number}
- */
-export function calculateGramsFromOunce(ingredient) {
-    // 1 ounce is 28.3495 grams
-    return 28.3495 * ingredient;
-}
-
-export function calculateOuncesFromGram( ingredient ) {
-    // 1 gram is 0.035274 ounces so
-    // divide the ounces from { ingredient } by 28.3495
-    return ingredient / gram;
+export function clampNumber( input ) {
+    return _floor(input, roundTo)
 }
 
 /**
@@ -153,13 +139,11 @@ export function ingredientPercentTotals({
     // make and combine an object with all the ingredients from the form
     // and place it in the ingredient object created above
     let combinedIngredients = combineIngredients( ingObj, additionalIngredients)
-
     // get all ingredient percentages
     Object.entries(combinedIngredients).forEach(([key, value]) => {
         let percentObj = {}
 
         percentObj[key] = value.percent
-
         Object.assign(totals, percentObj)
     })
 
@@ -167,6 +151,7 @@ export function ingredientPercentTotals({
 
     combinedIngredients['Totals'] = totals;
     combinedIngredients['Totals']['totalPercent'] = percentsTotal(combinedIngredients['Totals'])
+    combinedIngredients['Totals']['weights'] = {};
 
     return combinedIngredients
 }
@@ -204,10 +189,6 @@ export function percentsTotal(objectValues) {
     return _floor(Object.values(objectValues).reduce(reducer, initialValue), roundTo);
 }
 
-export function pizzaShape( shape, width, length ) {
-
-}
-
 export function calculateDoughWeight({
                                          measure = '',
                                          doughBase = {},
@@ -216,9 +197,14 @@ export function calculateDoughWeight({
                                      }) {
 
     let ddw = desiredDoughWeight( measure, doughBase, totalIngredientsPercent );
+    let dbNumber = _toNumber(doughBase.dbNumber);
+
 
     if ( measure === 'metric' ) {
         ddw =  ouncesToGrams(ddw)
+    }
+    if (measure === 'metric' && doughBase.calcBy === 'weight' ) {
+        ddw = gramsToOunces(ddw)
     }
 
 
@@ -229,11 +215,13 @@ export function calculateDoughWeight({
 
     // create an object for ingredientObj then add in the weights
     Object.entries(ingredientObject).forEach(([key, value]) => {
-        value.ounces = getIngredientWeight({flourWeight: flourWeight.ounces, ingredientPercent: value.percent});
+        let ingredientWeight = getIngredientWeight({flourWeight: flourWeight.ounces, ingredientPercent: value.percent})
+        value.ounces = _floor( ingredientWeight * dbNumber, roundTo )
         value.grams = _floor(ouncesToGrams(value.ounces), roundTo)
     })
-    ingredients.flour.ounces = _floor(flourWeight.ounces, roundTo);
-    ingredients.flour.grams = _floor(flourWeight.grams, roundTo );
+    ingredients.flour.ounces = _floor(flourWeight.ounces * dbNumber, roundTo) ;
+    ingredients.flour.grams = _floor(flourWeight.grams  * dbNumber, roundTo ) ;
+
 
     return ingredients ;
 }
@@ -254,6 +242,30 @@ function calculateFlourWeight( measure, desiredDoughWeight, ingredientPercentTot
     }
 }
 
+export function calculateThicknessFactor(pizzaShape = '', width = 0, length = 0, desiredDoughWeight = 0, measurementType ) {
+    // round / circle pie thickness factor
+    let panRadius = width / 2
+    let panSquare = Math.pow( panRadius, 2 );
+    let panArea = pi * panSquare
+
+    if ( pizzaShape === 'square' ) {
+        panArea = width * length
+        return  _floor( desiredDoughWeight / panArea, 5)
+    }
+
+
+    return _floor( desiredDoughWeight / panArea, 5)
+
+    // square/rectangle thickness factor
+
+}
+
+/**
+ * @param measureType
+ * @param ingredientTotals
+ * @param doughBase
+ * @returns {number}
+ */
 export function calculateDoughByFactor({
                                          measureType = '',
                                          ingredientTotals = 0,
@@ -265,7 +277,7 @@ export function calculateDoughByFactor({
     // const dbNumber = doughBase.dbNumber
     const shape = doughBase.pizzaShape
     let pizzaWidth = doughBase.pizzaWidth
-    const pizzaLength = doughBase.pizzaLength
+    let pizzaLength = doughBase.pizzaLength
     let factor = _toNumber(doughBase.factor);
     // take the 'loading factor' or 'Thickness factor
     // and multiply it by the desired pizza size (pizzaWidth) sq
@@ -277,8 +289,10 @@ export function calculateDoughByFactor({
     // 0.973 * 200.96 = 19.553
 
     if (measure === 'metric') {
-        pizzaWidth = cmToInches(doughBase.pizzaWidth)
-        console.log('pizzaWidth', pizzaWidth )
+        pizzaWidth = cmToInches(pizzaWidth)
+    }
+    if (measure === 'metric' && shape === 'square') {
+        pizzaLength = cmToInches(pizzaLength)
     }
 
     let radius = pizzaWidth / 2
@@ -313,7 +327,11 @@ function sumFilter( filter, objectToFilter ) {
    return Object.fromEntries( Object.entries(objectToFilter).filter(([key]) => !key.includes(filter)) )
 }
 
-export function getIngredientWeight ( {flourWeight = 0 , ingredientPercent = 0 } = {} ) {
+export function getIngredientWeight ( {flourWeight = 0 , ingredientPercent = 0, measureType ='' } = {} ) {
+    let fw = flourWeight;
+    if (measureType === 'metric') {
+        fw = gramsToOunces(fw)
+    }
 
-    return _floor(flourWeight  * ingredientPercent / 100, roundTo)
+    return _floor(fw  * ingredientPercent / 100, roundTo)
 }

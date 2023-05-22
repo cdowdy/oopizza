@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, reactive, defineComponent } from "vue";
+import {computed, ref} from "vue";
 // import { createInput } from "@formkit/vue";
 // import Repeater from "@/components/Repeater.vue";
 import _startCase from 'lodash/startCase';
@@ -7,12 +7,18 @@ import _startCase from 'lodash/startCase';
 // import {storeToRefs} from "pinia";
 // const doughStore = useDoughStore();
 import {
-  percentsTotal,
-  ingredientPercentTotals,
   calculateDoughWeight,
+  calculateThicknessFactor,
+  clampNumber,
+  cmToInches,
   filterObject,
-    filterObjectExclude
+  filterObjectExclude,
+  gramsToOunces,
+  ingredientPercentTotals,
+  percentsTotal
 } from "@/js/utilities";
+import TableIngredientRow from "@/views/TableIngredientRow.vue";
+import ExtraIngredients from "@/views/ExtraIngredients.vue";
 
 const calcModel = ref([]);
 // const rptr = createInput(Repeater);
@@ -65,6 +71,10 @@ const pizzaSizeLabel = computed(() => {
   return label;
 });
 
+const doughBallNummber = computed( () => {
+  return  'i dont fuckign know'
+})
+
 const showAdditionalIngredientInput = ref(false);
 const handleAddIngredients = () => {
   showAdditionalIngredientInput.value = true
@@ -94,6 +104,24 @@ const yeastTypeName = (type) => {
 const tfForTable = computed( () => {
 
     let model = calcModel.value.doughBase || 0
+  let pizzaShape = model.pizzaShape
+  let width = model.pizzaWidth
+  let length = model.pizzaLength || 0
+
+  console.log('model', model)
+
+
+
+  if (model.calcBy === 'weight' ) {
+    let tf = calculateThicknessFactor(pizzaShape, width, length, model.factor )
+    if (calcModel.value.measureType === 'metric') {
+      let factor = gramsToOunces(model.factor)
+      width = cmToInches(width)
+      length = cmToInches(length)
+      return  calculateThicknessFactor(pizzaShape, width, length, factor )
+    }
+    return tf
+  }
 
     return model.factor;
 })
@@ -171,9 +199,11 @@ const tableData = computed( () => {
     yeastPercent: doughIngredients.yeastPercent,
     additionalIngredients: checkedIngredients
   });
+
+
   let ingredientObject = filterObjectExclude( ingTotalObj, 'Totals')
   let percentTotals = filterObject(ingTotalObj, 'Totals')
-  console.log('percentTotals', percentTotals)
+
 
   const doughWeight = calculateDoughWeight({
     measure: measureType,
@@ -197,9 +227,11 @@ const tableData = computed( () => {
   })
 
 
-  ingTotalObj.Totals['totalGrams'] = percentsTotal(tempGramWeights)
-  ingTotalObj.Totals['totalOunces'] = percentsTotal(tempOzWeights)
-  console.log('ingTotalObj', ingTotalObj )
+  ingTotalObj.Totals.weights['grams'] = percentsTotal(tempGramWeights)
+  ingTotalObj.Totals.weights['ounces'] = percentsTotal(tempOzWeights)
+  ingTotalObj.Totals.weights['single'] = clampNumber(ingTotalObj.Totals.weights['ounces'] / doughbase.dbNumber)
+  ingTotalObj.Totals.weights['singleGrams']  = clampNumber(ingTotalObj.Totals.weights['grams'] / doughbase.dbNumber)
+
   return {
     measure: measureType,
     ingredients: filterObjectExclude(ingTotalObj, 'Totals'),
@@ -442,28 +474,9 @@ const tableData = computed( () => {
             />
 
             <!-- Additional Ingredients -->
-            <FormKit
-                type="checkbox"
-                label="Additional Ingredients"
-                name="optionalIngredients"
-                placeholder="Select ingredient"
-                :options="additionalIngredients"
-            />
+            <ExtraIngredients :additional-ingredients="additionalIngredients"
+                              :optional-ingredients="calcModel.doughIngredients.optionalIngredients "/>
 
-            <template v-for="ingredient in calcModel.doughIngredients.optionalIngredients ">
-             <FormKit type="group" name="checkedIngredients">
-               <FormKit type="number"
-                        :name="ingredient"
-                        id="ingredient"
-                        value="0"
-                        step=".01"
-                        min="0"
-                        validation="required"
-                        :label="_startCase(ingredient) +  ' Percent' "
-               />
-             </FormKit>
-
-            </template>
           </FormKit>
         </FormKit>
       </div>
@@ -472,40 +485,65 @@ const tableData = computed( () => {
 
       <div>
         <table class="table-auto w-full border">
-          <thead class="font-semibold uppercase text-gray-400 bg-gray-50">
+          <thead class="font-semibold uppercase bg-gray-800 text-white">
           <tr>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-s font-semibold text-gray-600 uppercase tracking-wider" >
+            <th class="px-5 py-3 border-b-2 border-gray-200 text-left font-semibold uppercase tracking-wider" >
               Ingredients
             </th>
-            <th  class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-s font-semibold text-gray-600 uppercase tracking-wider text-right">
+            <th class="px-5 py-3 border-b-2 border-gray-200 text-left font-semibold uppercase tracking-wider" >
+              Bakers %
+            </th>
+            <th  class="px-5 py-3 border-b-2 border-gray-200 font-semibold uppercase tracking-wider text-right">
               Grams
             </th>
-            <th  class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-s font-semibold text-gray-600 uppercase tracking-wider text-right" >
+            <th  class="px-5 py-3 border-b-2 border-gray-200 font-semibold uppercase tracking-wider text-right" >
               Ounces
             </th>
           </tr>
           </thead>
           <tbody>
-          <template v-for="(ingredient, totals ) in tableData.ingredients" :key="ingredient.name">
-            <tr>
-              <td class="px-5 py-5 border-b border-gray-200 bg-white text-md">
-             {{ ingredient.name }}: ({{ ingredient.percent }}%)
-              </td>
-              <td class="px-5 py-5 border-b border-gray-200 bg-white text-md text-right">
-                {{ingredient.grams }}
-              </td>
-              <td class="px-5 py-5 border-b border-gray-200 bg-white text-md text-right">
-                {{ ingredient.ounces }}
-              </td>
-            </tr>
-          </template>
-          <tr class="uppercase text-gray-400 bg-gray-50">
 
-            <td class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              Totals: {{ tableData.totals.Totals.totalPercent }}%, TF: {{ tfForTable }}
+          <tableIngredientRow :ingredients="tableData.ingredients"/>
+
+          <tr class="bg-gray-100">
+            <td class="px-5 py-5 border-b border-gray-200  text-md">
+              Thickness/Loading Factor: <b>{{ tfForTable }}</b>
             </td>
-            <td></td>
-            <td></td>
+            <td class="px-5 py-5 border-b border-gray-200  text-md">
+              {{ tableData.totals.Totals.totalPercent }}%
+            </td>
+            <td class="px-5 py-5 border-b border-gray-200  text-md">
+            </td>
+            <td class="px-5 py-5 border-b border-gray-200  text-md"></td>
+          </tr>
+          <tr>
+            <td class="px-5 py-5 border-b border-gray-200  text-md">
+              Total Weight:
+            </td>
+            <td class="px-5 py-5 border-b border-gray-200  text-md text-right">
+
+            </td>
+            <td class="px-5 py-5 border-b border-gray-200  text-md text-right">
+              {{ tableData.totals.Totals.weights.grams }}
+            </td>
+            <td class="px-5 py-5 border-b border-gray-200  text-md text-right">
+              {{ tableData.totals.Totals.weights.ounces }}
+            </td>
+          </tr>
+          <tr class="bg-gray-100">
+            <td class="px-5 py-5 border-b border-gray-200  text-md">
+              Single ball Weight:
+            </td>
+            <td class="px-5 py-5 border-b border-gray-200  text-md">
+
+            </td>
+
+            <td class="px-5 py-5 border-b border-gray-200  text-md text-right">
+              {{ tableData.totals.Totals.weights.singleGrams }}
+            </td>
+            <td class="px-5 py-5 border-b border-gray-200  text-md text-right">
+              {{ tableData.totals.Totals.weights.single }}
+            </td>
           </tr>
           </tbody>
         </table>
@@ -514,6 +552,3 @@ const tableData = computed( () => {
     </div>
 </template>
 
-<style>
-
-</style>
